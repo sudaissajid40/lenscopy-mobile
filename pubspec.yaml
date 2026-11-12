@@ -1,7 +1,7 @@
 name: lenscopy_mobile
 description: LensCopy Mobile - On-Device Full-Screen & Camera OCR with Google Lens Interactive Selection, Clipboard History, and Supabase Sync.
 publish_to: "none"
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
