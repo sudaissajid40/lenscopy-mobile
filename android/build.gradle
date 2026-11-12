@@ -6,12 +6,6 @@ allprojects {
             url 'https://storage.googleapis.com/download.flutter.io'
         }
     }
-    ext.flutter = [
-        compileSdkVersion: 34,
-        targetSdkVersion: 34,
-        minSdkVersion: 24,
-        ndkVersion: "25.1.8937393"
-    ]
 }
 
 rootProject.buildDir = '../build'
@@ -20,10 +14,18 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(':app')
+    if (project.name != 'app') {
+        project.ext.flutter = [
+            compileSdkVersion: 34,
+            targetSdkVersion: 34,
+            minSdkVersion: 24,
+        ]
+    }
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
             project.android {
                 compileSdkVersion 34
+                buildToolsVersion "34.0.0"
             }
         }
     }

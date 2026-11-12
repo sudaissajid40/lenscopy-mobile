@@ -24,12 +24,12 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.lenscopy.app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk 34
+    ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
@@ -38,15 +38,15 @@ android {
 
     defaultConfig {
         applicationId "com.lenscopy.app"
-        minSdk = 24
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutterVersionCode.toInteger()
-        versionName = flutterVersionName
+        minSdk 24
+        targetSdk 34
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
         }
@@ -54,7 +54,7 @@ android {
 }
 
 flutter {
-    source = "../.."
+    source '../..'
 }
 
 dependencies {
