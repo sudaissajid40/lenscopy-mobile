@@ -1,11 +1,14 @@
 package com.lenscopy.app
 
+import android.app.Activity
 import android.app.StatusBarManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.os.Build
-import androidx.annotation.NonNull
+import android.os.Bundle
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -15,7 +18,7 @@ class MainActivity : FlutterActivity() {
     private var pendingResult: MethodChannel.Result? = null
     private var initialScreenshotPath: String? = null
 
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
     }
@@ -32,7 +35,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
@@ -56,8 +59,8 @@ class MainActivity : FlutterActivity() {
                         statusBarManager?.requestAddTileService(
                             ComponentName(this, LensCopyTileService::class.java),
                             "LensCopy Scan",
-                            android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_lenscopy_tile),
-                            mainExecutor
+                            Icon.createWithResource(this, R.drawable.ic_lenscopy_tile),
+                            ContextCompat.getMainExecutor(this)
                         ) { resultCode ->
                             result.success(resultCode == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED)
                         }

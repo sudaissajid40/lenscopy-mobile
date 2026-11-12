@@ -58,5 +58,7 @@ flutter {
 }
 
 dependencies {
+    implementation "androidx.annotation:annotation:1.8.0"
+    implementation "androidx.core:core-ktx:1.13.1"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
 }
