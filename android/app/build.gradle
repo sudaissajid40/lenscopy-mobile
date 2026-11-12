@@ -4,10 +4,6 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-flutter {
-    source = "../.."
-}
-
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -28,33 +24,37 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.lenscopy.app"
-    compileSdk 34
-    ndkVersion flutter.ndkVersion
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
         applicationId "com.lenscopy.app"
-        minSdk 24
-        targetSdk 34
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        minSdk = 24
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
             minifyEnabled false
             shrinkResources false
         }
     }
+}
+
+flutter {
+    source = "../.."
 }
 
 dependencies {
