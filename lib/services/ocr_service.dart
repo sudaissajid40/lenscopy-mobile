@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../models/ocr_result.dart';
 
@@ -20,7 +22,12 @@ class OcrService {
     final inputImage = InputImage.fromFile(imageFile);
     
     // Get actual image dimensions
-    final decodedImage = await decodeImageFromList(await imageFile.readAsBytes());
+    final bytes = await imageFile.readAsBytes();
+    final completer = Completer<ui.Image>();
+    ui.decodeImageFromList(bytes, (ui.Image img) {
+      completer.complete(img);
+    });
+    final decodedImage = await completer.future;
     final size = Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
 
     final recognizedText = await recognizer.processImage(inputImage);
