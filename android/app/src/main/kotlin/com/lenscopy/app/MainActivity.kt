@@ -9,6 +9,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import androidx.core.content.ContextCompat
+import com.lenscopy.app.R
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -56,13 +57,17 @@ class MainActivity : FlutterActivity() {
                 "requestAddTile" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         val statusBarManager = getSystemService(Context.STATUS_BAR_SERVICE) as? StatusBarManager
-                        statusBarManager?.requestAddTileService(
-                            ComponentName(this, LensCopyTileService::class.java),
-                            "LensCopy Scan",
-                            Icon.createWithResource(this, R.drawable.ic_lenscopy_tile),
-                            ContextCompat.getMainExecutor(this)
-                        ) { resultCode ->
-                            result.success(resultCode == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED)
+                        if (statusBarManager != null) {
+                            statusBarManager.requestAddTileService(
+                                ComponentName(this, LensCopyTileService::class.java),
+                                "LensCopy Scan",
+                                Icon.createWithResource(this, R.drawable.ic_lenscopy_tile),
+                                ContextCompat.getMainExecutor(this)
+                            ) { resultCode ->
+                                result.success(resultCode == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED)
+                            }
+                        } else {
+                            result.success(false)
                         }
                     } else {
                         result.success(false)
