@@ -5,8 +5,12 @@ class ClipItem {
   final String text;
   final String source; // "Camera Scan", "Screen OCR", "Gallery Import"
   final DateTime createdAt;
-  bool isPinned;
+  bool isPinned; // Starred / Pinned status
   final String category; // "all", "links", "emails", "code", "text"
+  String? notes; // User personal notes / annotations for this scan
+
+  bool get isStarred => isPinned;
+  set isStarred(bool val) => isPinned = val;
 
   ClipItem({
     required this.id,
@@ -15,6 +19,7 @@ class ClipItem {
     required this.createdAt,
     this.isPinned = false,
     required this.category,
+    this.notes,
   });
 
   static String detectCategory(String text) {
@@ -37,6 +42,26 @@ class ClipItem {
     return 'text';
   }
 
+  ClipItem copyWith({
+    String? id,
+    String? text,
+    String? source,
+    DateTime? createdAt,
+    bool? isPinned,
+    String? category,
+    String? notes,
+  }) {
+    return ClipItem(
+      id: id ?? this.id,
+      text: text ?? this.text,
+      source: source ?? this.source,
+      createdAt: createdAt ?? this.createdAt,
+      isPinned: isPinned ?? this.isPinned,
+      category: category ?? this.category,
+      notes: notes ?? this.notes,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -44,7 +69,9 @@ class ClipItem {
       'source': source,
       'createdAt': createdAt.toIso8601String(),
       'isPinned': isPinned,
+      'isStarred': isPinned,
       'category': category,
+      'notes': notes,
     };
   }
 
@@ -54,8 +81,9 @@ class ClipItem {
       text: map['text'] ?? '',
       source: map['source'] ?? 'OCR Scan',
       createdAt: DateTime.tryParse(map['createdAt'] ?? '') ?? DateTime.now(),
-      isPinned: map['isPinned'] ?? false,
+      isPinned: map['isStarred'] ?? map['isPinned'] ?? false,
       category: map['category'] ?? 'text',
+      notes: map['notes'],
     );
   }
 

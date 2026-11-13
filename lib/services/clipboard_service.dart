@@ -84,6 +84,19 @@ class ClipboardService {
     }
   }
 
+  /// Toggle star status
+  Future<void> toggleStar(String id) => togglePin(id);
+
+  /// Update personal notes attached to a scan
+  Future<void> updateNotes(String id, String? notes) async {
+    final idx = _clips.indexWhere((c) => c.id == id);
+    if (idx != -1) {
+      final cleanNotes = notes?.trim().isEmpty == true ? null : notes?.trim();
+      _clips[idx] = _clips[idx].copyWith(notes: cleanNotes);
+      await _saveToStorage();
+    }
+  }
+
   Future<void> deleteClip(String id) async {
     _clips.removeWhere((c) => c.id == id);
     await _saveToStorage();
@@ -98,11 +111,23 @@ class ClipboardService {
     await _saveToStorage();
   }
 
-  List<ClipItem> filter({String query = '', String category = 'all', bool pinnedOnly = false}) {
+  List<ClipItem> filter({
+    String query = '',
+    String category = 'all',
+    bool pinnedOnly = false,
+    bool starredOnly = false,
+    bool hasNotesOnly = false,
+  }) {
+    final q = query.trim().toLowerCase();
     return _clips.where((c) {
-      if (pinnedOnly && !c.isPinned) return false;
+      if ((pinnedOnly || starredOnly) && !c.isStarred) return false;
+      if (hasNotesOnly && (c.notes == null || c.notes!.trim().isEmpty)) return false;
       if (category != 'all' && c.category != category) return false;
-      if (query.isNotEmpty && !c.text.toLowerCase().contains(query.toLowerCase())) return false;
+      if (q.isNotEmpty) {
+        final matchesText = c.text.toLowerCase().contains(q);
+        final matchesNotes = (c.notes ?? '').toLowerCase().contains(q);
+        if (!matchesText && !matchesNotes) return false;
+      }
       return true;
     }).toList();
   }

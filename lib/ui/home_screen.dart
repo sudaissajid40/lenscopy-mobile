@@ -7,6 +7,7 @@ import '../services/supabase_service.dart';
 import 'clipboard_hub_screen.dart';
 import 'lens_overlay_screen.dart';
 import 'settings_screen.dart';
+import 'widgets/taskbar_tutorial_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Auto-sync account state with server
-    SupabaseService().autoSync();
+    SupabaseService().autoSync().then((_) {
+      if (mounted) setState(() {});
+    });
 
     // Check if launched from Top Taskbar / Quick Settings Tile
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -36,14 +39,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _processImage(File imageFile, String source) async {
-    // Check scan quota
-    final allowed = await SupabaseService().recordScan();
-    if (!allowed) {
+    final account = SupabaseService().account;
+    if (!account.canScan) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Scan limit reached. Please upgrade to Premium or invite friends!'),
-            backgroundColor: Color(0xFFEF4444),
+          SnackBar(
+            content: Text(
+              'Free limit reached (${account.dailyAllowance} scans/day). Upgrade to Premium or invite friends!',
+            ),
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
       }
@@ -52,10 +56,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _isProcessing = true;
-      _statusMessage = 'Running on-device OCR...';
+      _statusMessage = 'Running neural OCR...';
     });
 
     try {
+      await SupabaseService().recordScan();
       final ocrResult = await OcrService().processImageFile(imageFile);
 
       if (mounted) {
@@ -77,7 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
               source: source,
             ),
           ),
-        );
+        ).then((_) {
+          if (mounted) setState(() {});
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -100,28 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final XFile? photo = await _picker.pickImage(source: ImageSource.gallery);
     if (photo != null) {
       await _processImage(File(photo.path), 'Gallery Import');
-    }
-  }
-
-  Future<void> _scanCurrentScreen() async {
-    setState(() {
-      _isProcessing = true;
-      _statusMessage = 'Capturing on-screen content...';
-    });
-
-    final screenFile = await ScreenCaptureService.captureCurrentScreen();
-    if (screenFile != null) {
-      await _processImage(screenFile, 'Screen OCR');
-    } else {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Screen capture permission was not granted or cancelled.'),
-            backgroundColor: Color(0xFFF59E0B),
-          ),
-        );
-      }
     }
   }
 
@@ -152,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          // Remaining Quota Badge
+          // Remaining Quota / Premium Days Badge
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -166,13 +151,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 1,
               ),
             ),
-            child: Text(
-              account.isPremium ? '★ Premium' : '${account.remainingScans} scans left',
-              style: TextStyle(
-                color: account.isPremium ? const Color(0xFF34D399) : const Color(0xFFA5B4FC),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  account.isPremium ? Icons.star_rounded : Icons.flash_on_rounded,
+                  size: 14,
+                  color: account.isPremium ? const Color(0xFF34D399) : const Color(0xFFA5B4FC),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  account.isPremium
+                      ? '★ ${account.daysRemaining} days left'
+                      : '${account.remainingScans}/${account.dailyAllowance} scans',
+                  style: TextStyle(
+                    color: account.isPremium ? const Color(0xFF34D399) : const Color(0xFFA5B4FC),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
           IconButton(
@@ -200,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Top Quick Settings Tile Tip Card
+                  // Top Quick Settings Tile Banner with Animated Video/Graphic button
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -209,48 +207,76 @@ class _HomeScreenState extends State<HomeScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.35)),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8).withOpacity(0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 24),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF38BDF8).withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 24),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Top Taskbar Quick Tile',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                                  ),
+                                  SizedBox(height: 3),
+                                  Text(
+                                    'Scan your screen instantly from any app by swiping down your phone shade!',
+                                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Top Taskbar / Quick Tile',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Swipe down your phone taskbar anytime to scan text on your current screen without opening the app!',
-                                style: TextStyle(color: Colors.white60, fontSize: 12),
-                              ),
-                            ],
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () => TaskbarTutorialDialog.show(context),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF38BDF8).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.play_circle_fill_rounded, color: Color(0xFF38BDF8), size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Watch How to Add to Taskbar',
+                                  style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
                   // Big Action Card: Live Camera Scan
                   InkWell(
                     onTap: _captureCamera,
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      height: 160,
+                      height: 150,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
@@ -260,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            color: const Color(0xFF6366F1).withOpacity(0.35),
                             blurRadius: 18,
                             offset: const Offset(0, 8),
                           ),
@@ -269,15 +295,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.camera_alt_rounded, size: 54, color: Colors.white),
-                          SizedBox(height: 12),
+                          Icon(Icons.camera_alt_rounded, size: 50, color: Colors.white),
+                          SizedBox(height: 10),
                           Text(
                             'Scan with Camera',
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Google Lens interactive selection on photo',
+                            'Interactive Google Lens selection on photo',
                             style: TextStyle(fontSize: 12, color: Colors.white70),
                           ),
                         ],
@@ -285,79 +311,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Split Cards: Scan Screen & Pick from Gallery
-                  Row(
-                    children: [
-                      // Scan Current Screen Button
-                      Expanded(
-                        child: InkWell(
-                          onTap: _scanCurrentScreen,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  // Import Photo from Gallery (Expanded clean full-width card)
+                  InkWell(
+                    onTap: _pickGallery,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              color: const Color(0xFFA855F7).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(14),
                             ),
+                            child: const Icon(Icons.photo_library_rounded, color: Color(0xFFA855F7), size: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
-                                Icon(Icons.screenshot_monitor_rounded, color: Color(0xFF38BDF8), size: 36),
-                                SizedBox(height: 10),
                                 Text(
-                                  'Scan Screen',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                  'Import Photo / Screenshot',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 15),
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  'OCR anything on display',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 11, color: Colors.white54),
+                                  'Select an existing image from phone gallery to OCR',
+                                  style: TextStyle(fontSize: 12, color: Colors.white54),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                          const Icon(Icons.chevron_right_rounded, color: Colors.white38),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-
-                      // Import Photo from Gallery
-                      Expanded(
-                        child: InkWell(
-                          onTap: _pickGallery,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
-                            ),
-                            child: Column(
-                              children: const [
-                                Icon(Icons.photo_library_rounded, color: Color(0xFFA855F7), size: 36),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Import Photo',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'From phone gallery',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 11, color: Colors.white54),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 16),
 
                   // Permanent Clipboard Hub Access Card
                   InkWell(
@@ -365,12 +365,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(builder: (_) => const ClipboardHubScreen()),
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     child: Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
                       child: Row(
@@ -379,9 +379,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981).withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(Icons.content_paste_rounded, color: Color(0xFF34D399), size: 24),
+                            child: const Icon(Icons.content_paste_rounded, color: Color(0xFF34D399), size: 28),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -400,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white38),
+                          const Icon(Icons.chevron_right_rounded, color: Colors.white38),
                         ],
                       ),
                     ),

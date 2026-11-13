@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/clipboard_service.dart';
 import 'services/supabase_service.dart';
 import 'ui/home_screen.dart';
+import 'ui/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,11 +21,16 @@ void main() async {
   await ClipboardService().init();
   await SupabaseService().init();
 
-  runApp(const LensCopyMobileApp());
+  final prefs = await SharedPreferences.getInstance();
+  final hasCompletedOnboarding = prefs.getBool('has_completed_onboarding') ?? false;
+
+  runApp(LensCopyMobileApp(initialHome: hasCompletedOnboarding ? const HomeScreen() : const OnboardingScreen()));
 }
 
 class LensCopyMobileApp extends StatelessWidget {
-  const LensCopyMobileApp({super.key});
+  final Widget initialHome;
+
+  const LensCopyMobileApp({super.key, required this.initialHome});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +47,7 @@ class LensCopyMobileApp extends StatelessWidget {
         ),
         fontFamily: 'Roboto',
       ),
-      home: const HomeScreen(),
+      home: initialHome,
     );
   }
 }

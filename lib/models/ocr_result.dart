@@ -87,6 +87,7 @@ class LensOcrResult {
     required Size cropSize,
     required Offset cropOffset,
     required double scaleRatio,
+    bool defaultSelected = true,
   }) {
     List<LensBlock> parsedBlocks = [];
 
@@ -104,7 +105,7 @@ class LensOcrResult {
           parsedWords.add(LensWord(
             text: w.text,
             boundingBox: mappedBox,
-            isSelected: true,
+            isSelected: defaultSelected,
           ));
         }
         final mappedLineBox = Rect.fromLTRB(

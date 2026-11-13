@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../models/ocr_result.dart';
-import '../../services/clipboard_service.dart';
-import '../../services/ocr_service.dart';
+import '../models/ocr_result.dart';
+import '../services/clipboard_service.dart';
+import '../services/ocr_service.dart';
 import 'widgets/action_pill.dart';
 import 'widgets/lens_bounding_painter.dart';
 
@@ -546,6 +546,7 @@ class _LensOverlayScreenState extends State<LensOverlayScreen>
                   child: Center(
                     child: LensActionPill(
                       selectedText: _selectedText,
+                      isScanning: _isDeepScanning,
                       onCopy: _copySelectedText,
                       onSelectAll: _selectAll,
                       onShare: _shareText,

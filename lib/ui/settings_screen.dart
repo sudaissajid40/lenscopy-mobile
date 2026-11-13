@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../services/screen_capture_service.dart';
-import '../../services/supabase_service.dart';
+import '../services/screen_capture_service.dart';
+import '../services/supabase_service.dart';
+import 'widgets/taskbar_tutorial_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -296,11 +297,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
                 ),
                 const SizedBox(height: 14),
-                ElevatedButton.icon(
-                  onPressed: () => ScreenCaptureService.requestAddTile(),
-                  icon: const Icon(Icons.add_to_home_screen_rounded, size: 16, color: Colors.white),
-                  label: const Text('Prompt Add Tile to Top Bar', style: TextStyle(color: Colors.white, fontSize: 12)),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => TaskbarTutorialDialog.show(context),
+                      icon: const Icon(Icons.play_circle_fill_rounded, size: 16, color: Colors.white),
+                      label: const Text('Watch Guide', style: TextStyle(color: Colors.white, fontSize: 12)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1)),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => ScreenCaptureService.requestAddTile(),
+                      icon: const Icon(Icons.add_to_home_screen_rounded, size: 16, color: Colors.white70),
+                      label: const Text('Add Tile', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.white.withOpacity(0.2))),
+                    ),
+                  ],
                 ),
               ],
             ),
