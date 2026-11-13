@@ -53,20 +53,24 @@ class _TaskbarTutorialDialogState extends State<TaskbarTutorialDialog>
   }
 
   Future<void> _attemptAutoAddTile() async {
-    final added = await ScreenCaptureService.requestAddTile();
-    if (mounted) {
-      if (added) {
+    try {
+      await ScreenCaptureService.requestAddTile();
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('LensCopy Scan tile added to your Quick Settings!'),
-            backgroundColor: Color(0xFF10B981),
+            content: Text('Swipe down notification bar and tap ✏️ to add "LensCopy Scan" tile.'),
+            backgroundColor: Color(0xFF1E293B),
+            behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context);
-      } else {
+      }
+    } catch (_) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Swipe down notification bar and tap pencil ✏️ to add tile manually.'),
+            backgroundColor: Color(0xFF1E293B),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

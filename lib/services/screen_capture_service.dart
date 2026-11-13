@@ -51,12 +51,13 @@ class ScreenCaptureService {
   }
 
   /// Request the system to prompt adding the Quick Settings Tile to top notification shade
-  static Future<void> requestAddTile() async {
-    if (!Platform.isAndroid) return;
+  static Future<bool> requestAddTile() async {
+    if (!Platform.isAndroid) return false;
     try {
-      await _channel.invokeMethod('requestAddTile');
+      final res = await _channel.invokeMethod<bool>('requestAddTile');
+      return res ?? true;
     } catch (e) {
-      // Ignore
+      return false;
     }
   }
 }
